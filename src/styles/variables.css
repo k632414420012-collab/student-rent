@@ -1,0 +1,89 @@
+:root {
+  /* Brand Pastel Color Palette */
+  --primary: #7065f0;
+  --primary-hover: #5d50e6;
+  --primary-light: #f1effe;
+  --primary-glow: rgba(112, 101, 240, 0.22);
+  --primary-border: #dedafb;
+
+  --secondary: #38bdf8;
+  --secondary-hover: #0ea5e9;
+  --secondary-light: #eef8ff;
+  --secondary-border: #d3edfd;
+
+  --accent: #10b981;
+  --accent-hover: #059669;
+  --accent-light: #e8f9f1;
+  --accent-border: #bbf7d0;
+
+  --warning: #f59e0b;
+  --warning-light: #fffbeb;
+  --warning-border: #fde68a;
+
+  --danger: #f43f5e;
+  --danger-light: #fff1f2;
+  --danger-border: #fecdd3;
+
+  /* Pastel Accent Colors */
+  --pastel-lavender: #8b7cf8;
+  --pastel-lavender-bg: #f4f2ff;
+  --pastel-peach: #fb923c;
+  --pastel-peach-bg: #fff5ed;
+  --pastel-mint: #34d399;
+  --pastel-mint-bg: #edfbf5;
+  --pastel-sky: #60a5fa;
+  --pastel-sky-bg: #f0f7ff;
+  --pastel-rose: #f472b6;
+  --pastel-rose-bg: #fdf2f8;
+  --pastel-lemon: #fbbf24;
+  --pastel-lemon-bg: #fefce8;
+
+  /* Neutral tones - Soft, warm, refined */
+  --bg-main: #f8f9fe;
+  --bg-surface: #ffffff;
+  --bg-elevated: #ffffff;
+  --bg-muted: #f3f4fa;
+  --bg-subtle: #fbfbfe;
+
+  --text-primary: #1e1b39;
+  --text-secondary: #585575;
+  --text-muted: #9694ac;
+  --text-inverse: #ffffff;
+
+  --border-subtle: #eae8f5;
+  --border-strong: #d5d3e8;
+  --border-focus: #7065f0;
+
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, #7065f0 0%, #9078f4 50%, #a78bfa 100%);
+  --gradient-accent: linear-gradient(135deg, #38b2ac 0%, #60a5fa 100%);
+  --gradient-peach: linear-gradient(135deg, #fb923c 0%, #f472b6 100%);
+  --gradient-mint: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+  --gradient-hero: linear-gradient(160deg, #f7f5ff 0%, #eef5ff 45%, #fff6ef 100%);
+  --gradient-card: linear-gradient(180deg, #ffffff 0%, #fbfbfe 100%);
+  --gradient-badge: linear-gradient(135deg, #fde68a 0%, #f59e0b 100%);
+  --gradient-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.75) 100%);
+
+  /* Shadows - Layered & diffused */
+  --shadow-sm: 0 2px 6px -1px rgba(78, 64, 150, 0.05), 0 1px 3px -1px rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 8px 20px -4px rgba(78, 64, 150, 0.08), 0 3px 6px -2px rgba(0, 0, 0, 0.03);
+  --shadow-lg: 0 16px 36px -6px rgba(78, 64, 150, 0.1), 0 6px 12px -4px rgba(0, 0, 0, 0.03);
+  --shadow-xl: 0 24px 50px -10px rgba(78, 64, 150, 0.12), 0 12px 20px -6px rgba(0, 0, 0, 0.04);
+  --shadow-glow: 0 0 24px rgba(112, 101, 240, 0.28);
+  --shadow-pastel-pink: 0 8px 24px rgba(244, 114, 182, 0.2);
+
+  /* Radius - Softer & friendly */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 26px;
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-bounce: 350ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Container */
+  --container-max: 1220px;
+}

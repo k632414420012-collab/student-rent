@@ -1,0 +1,254 @@
+// Prisma schema for BorrowMe (Student Rent Platform) - Production PostgreSQL
+// Sử dụng schema này khi deploy lên Vercel kết hợp Supabase, Neon hoặc Vercel Postgres
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// User model supporting Renters, Lenders, Admins and Organizations
+model User {
+  id                 String                @id @default(cuid())
+  email              String                @unique
+  password           String?               // Hashed password
+  studentEmail       String?               @unique
+  fullName           String
+  phone              String?
+  avatarUrl          String?
+  role               String                @default("RENTER") // RENTER, LENDER, ADMIN, ORG
+  isVerified         Boolean               @default(false)
+  verifiedAt         DateTime?
+  studentCardNumber  String?
+  studentCardImage   String?
+  verificationStatus String                @default("UNVERIFIED") // UNVERIFIED, PENDING, VERIFIED, REJECTED
+  verificationNote   String?
+  idCardNumber       String?
+  university         String?
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+
+  items                Item[]                @relation("LenderItems")
+  bookings             Booking[]             @relation("RenterBookings")
+  transactions         Transaction[]
+  disputesRaised       Dispute[]             @relation("RaisedDisputes")
+  disputesResolved     Dispute[]             @relation("ResolvedDisputes")
+  reviewsGiven         Review[]              @relation("ReviewsGiven")
+  reviewsReceived      Review[]              @relation("ReviewsReceived")
+  sentMessages         Message[]             @relation("SentMessages")
+  receivedMessages     Message[]             @relation("ReceivedMessages")
+  notifications        Notification[]
+  verificationRequests VerificationRequest[]
+}
+
+// Category model
+model Category {
+  id              String   @id @default(cuid())
+  name            String
+  slug            String   @unique
+  icon            String?
+  minDepositRate  Float    @default(0.5) // Min deposit percentage (0.5 = 50%)
+  createdAt       DateTime @default(now())
+
+  items           Item[]
+}
+
+// Item / Product for Rent
+model Item {
+  id                String             @id @default(cuid())
+  lenderId          String
+  categoryId        String
+  title             String
+  description       String
+  conditionStatus   String             // Mới 99%, Rất tốt, Tốt, Khá
+  rentalPricePerDay Float
+  depositAmount     Float
+  location          String             // Khu vực / Ký túc xá / Quận
+  isPremium         Boolean            @default(false)
+  premiumUntil      DateTime?
+  status            String             @default("ACTIVE") // ACTIVE, HIDDEN, BANNED
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  lender            User               @relation("LenderItems", fields: [lenderId], references: [id], onDelete: Cascade)
+  category          Category           @relation(fields: [categoryId], references: [id])
+  images            ItemImage[]
+  availabilities    ItemAvailability[]
+  bookings          Booking[]
+  reviews           Review[]
+}
+
+// Item Images
+model ItemImage {
+  id        String   @id @default(cuid())
+  itemId    String
+  imageUrl  String
+  isPrimary Boolean  @default(false)
+  order     Int      @default(0)
+
+  item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+}
+
+// Availability Calendar for Items
+model ItemAvailability {
+  id        String   @id @default(cuid())
+  itemId    String
+  date      DateTime
+  status    String   @default("AVAILABLE") // AVAILABLE, BOOKED, UNAVAILABLE
+
+  item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([itemId, date])
+}
+
+// Booking Lifecycle
+model Booking {
+  id              String        @id @default(cuid())
+  bookingCode     String        @unique // e.g. BRW-2026-0001
+  renterId        String
+  itemId          String
+  startDate       DateTime
+  endDate         DateTime
+  totalDays       Int
+  rentalFee       Float
+  depositFee      Float
+  serviceFee      Float         @default(0) // 8-10% of rentalFee
+  protectionFee   Float         @default(0) // Optional protection plan
+  totalAmount     Float
+  
+  // Statuses: PENDING_PAYMENT, CONFIRMED, ACTIVE, RETURNED, COMPLETED, CANCELLED, DISPUTED
+  status          String        @default("PENDING_PAYMENT")
+  
+  lenderConfirmedHandover Boolean   @default(false)
+  renterConfirmedReceived Boolean   @default(false)
+  lenderConfirmedReturn   Boolean   @default(false)
+  
+  cancelledAt     DateTime?
+  cancelReason    String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  renter          User          @relation("RenterBookings", fields: [renterId], references: [id])
+  item            Item          @relation(fields: [itemId], references: [id])
+  transactions    Transaction[]
+  dispute         Dispute?
+  reviews         Review[]
+  messages        Message[]
+}
+
+// Transactions and Escrow Ledger
+model Transaction {
+  id             String    @id @default(cuid())
+  bookingId      String?
+  userId         String
+  transactionCode String   @unique // e.g. TX-2026-001
+  
+  // Types: RENTAL_PAYMENT, DEPOSIT_HOLD, DEPOSIT_REFUND, DEPOSIT_DEDUCT, LENDER_PAYOUT, PREMIUM_FEE, VERIFICATION_FEE
+  type           String
+  amount         Float
+  paymentMethod  String    @default("VIETQR") // VIETQR, WALLET, BANK_TRANSFER
+  qrPayload      String?
+  gatewayStatus  String    @default("PENDING") // PENDING, SUCCESS, FAILED
+  gatewayRef     String?
+  createdAt      DateTime  @default(now())
+
+  booking        Booking?  @relation(fields: [bookingId], references: [id])
+  user           User      @relation(fields: [userId], references: [id])
+}
+
+// Dispute Resolution
+model Dispute {
+  id                    String    @id @default(cuid())
+  bookingId             String    @unique
+  raisedById            String
+  reason                String
+  evidenceUrls          String    // JSON string array of image/video URLs
+  deductedAmount        Float     @default(0)
+  adminNote             String?
+  resolvedById          String?
+  
+  // Status: OPEN, RESOLVED, REJECTED
+  status                String    @default("OPEN")
+  createdAt             DateTime  @default(now())
+  resolvedAt            DateTime?
+
+  booking               Booking   @relation(fields: [bookingId], references: [id])
+  raisedBy              User      @relation("RaisedDisputes", fields: [raisedById], references: [id])
+  resolvedBy            User?     @relation("ResolvedDisputes", fields: [resolvedById], references: [id])
+}
+
+// 2-Way Reviews & Ratings
+model Review {
+  id          String   @id @default(cuid())
+  bookingId   String
+  reviewerId  String
+  revieweeId  String
+  itemId      String
+  rating      Int      // 1 to 5
+  comment     String
+  createdAt   DateTime @default(now())
+
+  booking     Booking  @relation(fields: [bookingId], references: [id])
+  reviewer    User     @relation("ReviewsGiven", fields: [reviewerId], references: [id])
+  reviewee    User     @relation("ReviewsReceived", fields: [revieweeId], references: [id])
+  item        Item     @relation(fields: [itemId], references: [id])
+}
+
+// Direct Messages & Notes
+model Message {
+  id          String   @id @default(cuid())
+  bookingId   String?
+  senderId    String
+  receiverId  String
+  messageText String
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  booking     Booking? @relation(fields: [bookingId], references: [id])
+  sender      User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiver    User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+}
+
+// Notifications
+model Notification {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String
+  content     String
+  type        String   // BOOKING, PAYMENT, REMINDER, DISPUTE
+  linkUrl     String?
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// System Configurations
+model SystemConfig {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+}
+
+// Student Verification Requests
+model VerificationRequest {
+  id                String    @id @default(cuid())
+  userId            String
+  studentEmail      String?
+  university        String
+  studentCardNumber String
+  studentCardImage  String?
+  idCardNumber      String?
+  status            String    @default("PENDING") // PENDING, APPROVED, REJECTED
+  adminNote         String?
+  createdAt         DateTime  @default(now())
+  reviewedAt        DateTime?
+
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
